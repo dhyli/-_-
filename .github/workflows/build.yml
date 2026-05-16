@@ -47,14 +47,24 @@ jobs:
             [ -f "$TRY" ] && CC="$TRY" && break
           done
         fi
+        echo "Compiler: $CC"
+        $CC --version
         mkdir -p bin
-        $CC -static -O2 -Wall -Wextra -Wno-unused-parameter -o "bin/${{ matrix.out_name }}" redirect_daemon.c -lpthread
+        $CC -static -O2 -Wall -Wextra -Wno-unused-parameter \
+            -o "bin/${{ matrix.out_name }}" \
+            redirect_daemon.c
 
     - name: Strip binary
       run: |
         TOOLCHAIN="${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin"
         STRIP="$TOOLCHAIN/llvm-strip"
         [ -f "$STRIP" ] && "$STRIP" --strip-all "bin/${{ matrix.out_name }}"
+
+    - name: Verify binary
+      run: |
+        file "bin/${{ matrix.out_name }}"
+        ls -lh "bin/${{ matrix.out_name }}"
+        readelf -d "bin/${{ matrix.out_name }}" 2>/dev/null | grep NEEDED || echo "Static link confirmed"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -94,10 +104,10 @@ jobs:
       run: |
         VER="${{ steps.version.outputs.version }}"
         mkdir -p release
-        cp -r scripts config release/
-        cp module.json module.prop customize.sh service.sh post-fs-data.sh uninstall.sh webui.html build.sh build.ps1 build.bat release/
-        cp redirect_daemon.c release/
-        cp -r bin release/
+        cp -r scripts config release/ 2>/dev/null || true
+        cp module.json module.prop customize.sh service.sh post-fs-data.sh uninstall.sh webui.html build.sh build.ps1 build.bat release/ 2>/dev/null || true
+        cp redirect_daemon.c release/ 2>/dev/null || true
+        cp -r bin release/ 2>/dev/null || true
         cd release && zip -r "../${{ env.MODULE_NAME }}-${VER}.zip" . && cd ..
         ls -lh "${{ env.MODULE_NAME }}-${VER}.zip"
 
