@@ -64,7 +64,6 @@ jobs:
       run: |
         file "bin/${{ matrix.out_name }}"
         ls -lh "bin/${{ matrix.out_name }}"
-        readelf -d "bin/${{ matrix.out_name }}" 2>/dev/null | grep NEEDED || echo "Static link confirmed"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -118,7 +117,7 @@ jobs:
         path: ${{ env.MODULE_NAME }}-${{ steps.version.outputs.version }}.zip
         retention-days: 90
 
-    release:
+  release:
     needs: package-module
     runs-on: ubuntu-latest
     if: always() && needs.package-module.result == 'success'
